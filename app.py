@@ -43,17 +43,22 @@ for photo in photos:
         print()
         print("-----------------------------------")
         eval_data = evaluate(f"{ppath}/{photo}", photo, "output/", "answer_key.txt", cap, None, None)
-        if eval_data[4] in rolls:
+        try:
+         if eval_data[4] in rolls:
             dup_rolls.append(photo)
             os.system(f"cp {ppath}/{photo} duplicates/")
-        else:
+         else:
             rolls.append(eval_data[4])
+        except Exception as e:
+            print(e)
+           
     
 end_time = time.time()
 print()
-print("Duplicate photos found and copied them to duplicate folder.")
-print(dup_rolls)
+#print("Duplicate photos found and copied them to duplicate folder.")
+#print(dup_rolls)
 print()
 print("Time taken:", int(end_time - start_time), "seconds")
 print("Total OMR sheets:", len(os.listdir("output/")))
 
+os.system("rm *.jpg")

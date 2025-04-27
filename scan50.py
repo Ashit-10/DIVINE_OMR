@@ -45,6 +45,8 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
     # Use your uploaded image
     # image_path = 'input/test10.jpeg'  # Your uploaded file path
     image = cv2.imread(image_path)
+    if image.shape[0] > image.shape[1]:
+        image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
     image = cv2.resize(image, (1200, 550))  # Resize for faster processing
     original = image.copy()
 
@@ -310,7 +312,7 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
 
     # Save final visual
     cv2.imwrite("final_result.jpg", final_visual)
-    print("\nSaved final evaluated image -> final_result.jpg")
+  #  print("\nSaved final evaluated image -> final_result.jpg")
 
 
     # Suppose final_visual is your final output
@@ -335,7 +337,7 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
 
     # Save final image
     cv2.imwrite(f"{output}/{photo_name}_final_result_with_summary.jpg", new_image)
-    print(f"Saved {output}/{photo_name}_final_result_with_summary.jpg",)
-
+    print(f"Saved {output}{photo_name}_final_result_with_summary.jpg",)
+  
     # return f"{output}/final_result_with_summary.jpg"
     return correct + incorrect + unattempted, correct, unattempted, incorrect, "00", "None"
