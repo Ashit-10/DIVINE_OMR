@@ -1,5 +1,4 @@
 import scan50 as s50
-import scan100 as s100
 import os
 import json
 import time
@@ -10,10 +9,8 @@ def evaluate(image_file, photo, out_put_path, answer_key_file, caption, has_dark
     if len(answers) < 51:
         return s50.process_image(image_file, photo, out_put_path, 
                                   answer_key_file, caption, has_darkness, allow_partial_mark)
-    elif len(answers) > 50:
-        return s100.find_and_draw_squares(image_file, out_put_path, 
-                                   answer_key_file, caption, has_darkness, allow_partial_mark)
-
+    else:
+        print("Error in answer key")
 
 # evaluate('images/n18.jpg', 'output/', "answer_key.txt", "", None, None)   
 
