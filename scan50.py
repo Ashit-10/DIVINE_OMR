@@ -229,7 +229,7 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
         selected_options = []
         for opt in options:
             label, x, y, white_pixel_value = opt
-            if white_pixel_value > 170:
+            if white_pixel_value > 185:
                 selected_options.append(label)
         filtered_data[q_no] = selected_options
 
