@@ -53,6 +53,7 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     blur_valus = [0, 1, 3, 5]
+    blur_values_fix = None
 
     for bv in blur_valus:
         if bv == 0:
@@ -91,6 +92,7 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
         # Sort left to right
         columns = sorted(columns, key=lambda c: np.min(c[:, 0]))
         detected_columns = None
+        blur_values_fix = bv
         if len(columns) == 5:
             detected_columns = True
             break
@@ -98,6 +100,7 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
             detected_columns = False
 
 
+    print(blur_values_fix)
     # print(f"Detected {len(columns)} columns.")
     if not detected_columns:
     # Draw rectangles found so far for visualization
@@ -229,7 +232,16 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
         selected_options = []
         for opt in options:
             label, x, y, white_pixel_value = opt
-            if white_pixel_value > 185:
+
+            if blur_values_fix == 0:
+                white_pix_val = 165
+            elif blur_values_fix == 1:
+                white_pix_val = 180
+            else:
+                white_pix_val = 190
+           
+
+            if white_pixel_value > white_pix_val:
                 selected_options.append(label)
         filtered_data[q_no] = selected_options
 
