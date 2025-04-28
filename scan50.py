@@ -184,7 +184,7 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
 
     # === Step 7: Print Final JSON ===
     # print("\n\n=== Final Data ===\n")
-    # print(json.dumps(final_data))
+    print(json.dumps(final_data))
 
     # === Step 8: Filter options based on white pixel threshold ===
 
@@ -194,7 +194,7 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
         selected_options = []
         for opt in options:
             label, x, y, white_pixel_value = opt
-            if white_pixel_value > 155:
+            if white_pixel_value > 170:
                 selected_options.append(label)
         filtered_data[q_no] = selected_options
 
