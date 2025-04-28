@@ -51,30 +51,47 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
     original = image.copy()
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (3, 3), 0)
-    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                                    cv2.THRESH_BINARY_INV, 27, 5)
 
-    # Find contours
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    blur_valus = [0, 1, 3, 5]
 
-    columns = []
+    for bv in blur_valus:
+        if bv == 0:
+            blurred = gray
+        else:
+            blurred = cv2.GaussianBlur(gray, (bv, bv), 0)
+        thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                   cv2.THRESH_BINARY_INV, 19, 3)
 
-    # === Step 2: Detect rectangles ===
-    for cnt in contours:
-        peri = cv2.arcLength(cnt, True)
-        approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
-        if len(approx) == 4:  # Only quadrilaterals
-            area = cv2.contourArea(cnt)
-            x, y, w, h = cv2.boundingRect(approx)
-            aspect_ratio = h / float(w) if w != 0 else 0
+ 
+        kernel_size = 2
+        kernel = np.ones((kernel_size, kernel_size), np.uint8)
+        thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
-            # Filter based on size and aspect ratio
-            if 20000 < area < 300000 and 1.3 < aspect_ratio < 5.0:
-                columns.append(approx.reshape(4, 2))
+        cv2.imshow("ji", thresh)
+        cv2.waitKey(0)
+        # Find contours
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # Sort left to right
-    columns = sorted(columns, key=lambda c: np.min(c[:, 0]))
+        columns = []
+
+        # === Step 2: Detect rectangles ===
+        for cnt in contours:
+            peri = cv2.arcLength(cnt, True)
+            approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
+            if len(approx) == 4:  # Only quadrilaterals
+                area = cv2.contourArea(cnt)
+                x, y, w, h = cv2.boundingRect(approx)
+                aspect_ratio = h / float(w) if w != 0 else 0
+
+                # Filter based on size and aspect ratio
+                if 20000 < area < 300000 and 1.3 < aspect_ratio < 5.0:
+                    columns.append(approx.reshape(4, 2))
+                    print(area)
+
+        # Sort left to right
+        columns = sorted(columns, key=lambda c: np.min(c[:, 0]))
+        if len(columns) == 5:
+            break
 
     # print(f"Detected {len(columns)} columns.")
 
