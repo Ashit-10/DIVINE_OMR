@@ -67,8 +67,8 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
         kernel = np.ones((kernel_size, kernel_size), np.uint8)
         thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
-        cv2.imshow("ji", thresh)
-        cv2.waitKey(0)
+        # cv2.imshow("ji", thresh)
+        # cv2.waitKey(0)
         # Find contours
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -336,7 +336,7 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
     h, w = final_visual.shape[:2]
 
     # Create a new image: add 150px extra height
-    new_image = np.ones((h + 150, w, 3), dtype=np.uint8) * 255  # white background
+    new_image = np.ones((h + 180, w, 3), dtype=np.uint8) * 255  # white background
 
     # Paste the original image on top
     new_image[:h, :w] = final_visual
@@ -351,6 +351,7 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
     cv2.putText(new_image, f"INCORRECT: {incorrect}", (50, y_start + 40), font, font_scale, (0, 0, 255), thickness)
     cv2.putText(new_image, f"NOT ATTEMPTED: {unattempted}", (50, y_start + 80), font, font_scale, (255, 0, 0), thickness)
     cv2.putText(new_image, f"TOTAL: {correct + incorrect + unattempted}", (50, y_start + 120), font, font_scale, (0, 0, 0), thickness)
+    cv2.putText(new_image, f"NAME: {photo_name}", (450, y_start), font, font_scale, (0, 0, 0), thickness)
 
     # Save final image
     cv2.imwrite(f"{output}/{photo_name}_final_result_with_summary.jpg", new_image)
