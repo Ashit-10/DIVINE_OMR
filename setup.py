@@ -34,7 +34,7 @@ def clean_and_move_files():
 
     # Step 3: Move the first found answer_key*.txt file to the answer_key.txt destination
     for filename in os.listdir(download_folder):
-        if filename.startswith('answer_key') and filename.endswith('.txt'):
+        if filename.startswith('answer_key'): # and filename.endswith('.txt'):
             source_path = os.path.join(download_folder, filename)
 
             # Optional: remove spaces before renaming
