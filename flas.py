@@ -4,75 +4,86 @@ import shutil
 import subprocess
 import signal
 import sys
+from flask import Flask, send_from_directory, render_template_string
 import threading
-from flask import Flask, render_template_string
 
 # Paths
 download_folder = "/sdcard/Download"
 input_folder = "temp_input"
 output_folder = "temp_output"
-
 os.makedirs(input_folder, exist_ok=True)
 os.makedirs(output_folder, exist_ok=True)
-os.system("rm -rf temp_output/*")
-os.system("rm -rf temp_input/*")
 
-# Extensions to watch
+# Clean old output files
+os.system("rm -rf temp_output/*")
+
+# Extensions to look for
 extensions = ('.jpg', '.jpeg', '.png')
 
-# Global variable to store last status
-last_status = "Waiting for images..."
+# Global state
+current_status = "waiting"  # can be 'waiting', 'processing', 'ready'
+latest_output_image = None
 
-# Setup Flask
+# Flask app
 app = Flask(__name__)
 
 @app.route('/')
-def home():
-    return render_template_string("""
-        <html>
-        <head><title>OMR Processing Status</title></head>
-        <body style="font-family:Arial;text-align:center;margin-top:50px;">
-            <h1>📄 OMR Processing</h1>
-            <h2>Status:</h2>
-            <p style="font-size:24px;color:green;">{{status}}</p>
-            <p><small>Refresh the page manually to update.</small></p>
-        </body>
-        </html>
-    """, status=last_status)
+def index():
+    global current_status, latest_output_image
 
-# Handle Ctrl+C to shutdown both threads
+    if current_status == "waiting":
+        return "<h1>Waiting for new OMR sheet...</h1>"
+    elif current_status == "processing":
+        return "<h1>Processing new OMR sheet...</h1>"
+    elif current_status == "ready" and latest_output_image:
+        return render_template_string('''
+            <h1>Latest Processed Sheet:</h1>
+            <img src="/output/{{filename}}" style="max-width:100%;height:auto;">
+        ''', filename=latest_output_image)
+    else:
+        return "<h1>Unknown status...</h1>"
+
+@app.route('/output/<path:filename>')
+def output_file(filename):
+    return send_from_directory(output_folder, filename)
+
+# Handle Ctrl+C
 def signal_handler(sig, frame):
     print("\nStopped by user.")
-    os._exit(0)
+    os._exit(0)  # kill everything
 
 signal.signal(signal.SIGINT, signal_handler)
 
+# Move and process function
 def move_and_process(file_path):
-    global last_status
+    global current_status, latest_output_image
+
     filename = os.path.basename(file_path)
     destination = os.path.join(input_folder, filename)
 
+    # Clean input folder
     os.system("rm -rf temp_input/*")
 
-    # Move the file
+    # Move file
     shutil.move(file_path, destination)
     print(f"Moved {filename} to input folder.")
-    last_status = f"Processing {filename}..."
 
-    # Run app.py (autoapp.py)
-    result = subprocess.run(["python", "autoapp.py"], capture_output=True, text=True)
-    
-    # Update the status after running
-    if result.returncode == 0:
-        last_status = f"✅ Processed {filename} successfully."
-    else:
-        last_status = f"❌ Error processing {filename}."
+    # Update status
+    current_status = "processing"
 
-    # Clean temp_input
-    os.system("rm -rf temp_input/*")
+    # Run app.py
+    subprocess.run(["python", "autoapp.py"])
 
+    # After processing, find latest output image
+    files = [f for f in os.listdir(output_folder) if f.lower().endswith(extensions)]
+    if files:
+        latest_file = max(files, key=lambda f: os.path.getctime(os.path.join(output_folder, f)))
+        latest_output_image = latest_file
+        print(f"New output image: {latest_output_image}")
+        current_status = "ready"
+
+# Watcher function
 def watcher():
-    global last_status
     print("Watching for new OMR images...")
     already_seen = set()
 
@@ -84,35 +95,12 @@ def watcher():
                 if full_path not in already_seen:
                     move_and_process(full_path)
                     already_seen.add(full_path)
-            time.sleep(1)  # Check every second
+            time.sleep(1)
         except Exception as e:
             print(f"Error: {e}")
-            last_status = f"Error: {str(e)}"
             time.sleep(1)
 
-def main():
-    # Start the watcher in a separate thread
-    watcher_thread = threading.Thread(target=watcher)
-    watcher_thread.start()
-
-    # Start Flask server
-    ip = get_ip_address()
-    print(f"🌐 Visit this page from any device: http://{ip}:5000/")
-    app.run(host="0.0.0.0", port=5000)
-
-def get_ip_address():
-    import subprocess
-    import re
-    try:
-        result = subprocess.run(["ifconfig"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        output = result.stdout
-        matches = re.findall(r'inet (192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)', output)
-        if matches:
-            return matches[0]
-        else:
-            return "127.0.0.1"
-    except Exception:
-        return "127.0.0.1"
-
+# Main
 if __name__ == "__main__":
-    main()
+    threading.Thread(target=watcher, daemon=True).start()
+    app.run(host="0.0.0.0", port=5000)
