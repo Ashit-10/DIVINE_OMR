@@ -8,8 +8,14 @@ import threading
 from flask import Flask, send_from_directory, render_template_string, jsonify
 
 import logging
-#log = logging.getLogger('werkzeug')
-#log.setLevel(logging.ERROR)
+
+class FilterRequests(logging.Filter):
+    def filter(self, record):
+        return "GET /" not in record.getMessage() and "POST /" not in record.getMessage()
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.INFO)
+log.addFilter(FilterRequests())
+
 # Paths
 # download_folder = "error"
 download_folder = "/sdcard/Download"
@@ -146,4 +152,4 @@ def serve_output_file(filename):
 
 if __name__ == "__main__":
     threading.Thread(target=watch_folder, daemon=True).start()
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000,debug = False, use_reloader=False)
