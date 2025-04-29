@@ -65,9 +65,9 @@ def move_and_process(file_path):
         print("Output from autoapp.py:")
         print(stdout)
 
-    if stderr:
-        print("Errors from autoapp.py:", file=sys.stderr)
-        print(stderr, file=sys.stderr)
+ #   if stderr:
+   #     print("Errors from autoapp.py:", file=sys.stderr)
+   #     print(stderr, file=sys.stderr)
     # res = subprocess.run(["python3", "autoapp.py"], capture_output=True, text=True)
     # print(res.stdout)
     # print(res.stderr)

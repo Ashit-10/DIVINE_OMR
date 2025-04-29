@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+from datetime import datetime
 # === Utilities ===
 
 def order_points(pts):
@@ -64,7 +64,7 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
                                    cv2.THRESH_BINARY_INV, 21, 3)
 
  
-        kernel_size = 1 #2
+        kernel_size = 1
         kernel = np.ones((kernel_size, kernel_size), np.uint8)
 
         thresh = cv2.erode(thresh, kernel, iterations=1)
@@ -395,12 +395,14 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
     font_scale = 1
     thickness = 2
     y_start = h + 40
-
+    now = datetime.now()
+    right_time = now.strftime("%I:%M %p")
     cv2.putText(new_image, f"CORRECT: {correct}", (50, y_start), font, font_scale, (0, 200, 0), thickness)
     cv2.putText(new_image, f"INCORRECT: {incorrect}", (50, y_start + 40), font, font_scale, (0, 0, 255), thickness)
     cv2.putText(new_image, f"NOT ATTEMPTED: {unattempted}", (50, y_start + 80), font, font_scale, (255, 0, 0), thickness)
     cv2.putText(new_image, f"TOTAL: {correct + incorrect + unattempted}", (50, y_start + 120), font, font_scale, (0, 0, 0), thickness)
     cv2.putText(new_image, f"NAME: {photo_name}", (450, y_start), font, font_scale, (0, 0, 0), thickness)
+    cv2.putText(new_image, f"Time: {right_time}", (450, y_start+60), font, font_scale, (0, 0, 0), thickness)
 
     # Save final image
     cv2.imwrite(f"{output}/{photo_name}_final_result_with_summary.jpg", new_image)
