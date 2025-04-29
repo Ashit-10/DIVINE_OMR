@@ -8,8 +8,8 @@ import threading
 from flask import Flask, send_from_directory, render_template_string, jsonify
 
 import logging
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
+#log = logging.getLogger('werkzeug')
+#log.setLevel(logging.ERROR)
 # Paths
 # download_folder = "error"
 download_folder = "/sdcard/Download"
