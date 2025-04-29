@@ -11,8 +11,8 @@ import logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 # Paths
-download_folder = "error"
-# download_folder = "/sdcard/Download"
+# download_folder = "error"
+download_folder = "/sdcard/Download"
 input_folder = "temp_input"
 output_folder = "temp_output"
 
@@ -47,7 +47,7 @@ def move_and_process(file_path):
     # Run your processing app
 
     process = subprocess.Popen(
-        ["python3", "autoapp.py"],
+        ["python", "autoapp.py"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True
