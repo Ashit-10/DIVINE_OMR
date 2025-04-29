@@ -365,14 +365,14 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
                     cv2.putText(final_visual, "-", (x_box, y_box), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 3)
                 elif len(detected) > 1:
                     # Multiple answers selected -> Cross
-                    cv2.putText(final_visual, "X", (x_box, y_box), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 3)
+                    cv2.putText(final_visual, "0", (x_box, y_box), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 3)
                 else:
                     if detected[0] in actual:
                         # Correct -> Tick
-                        cv2.putText(final_visual, "OK", (x_box, y_box), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 200, 0), 3)
+                        cv2.putText(final_visual, "1", (x_box, y_box), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 200, 0), 3)
                     else:
                         # Wrong -> Cross
-                        cv2.putText(final_visual, "X", (x_box, y_box), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 3)
+                        cv2.putText(final_visual, "0", (x_box, y_box), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 3)
 
     # Save final visual
     cv2.imwrite("final_result.jpg", final_visual)
