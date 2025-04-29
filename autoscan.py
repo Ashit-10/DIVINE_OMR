@@ -52,7 +52,7 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    blur_valus = [0, 1, 3, 5]
+    blur_valus = [0, 1, 3, 5, 7]
     blur_values_fix = None
 
     for bv in blur_valus:
@@ -61,11 +61,13 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
         else:
             blurred = cv2.GaussianBlur(gray, (bv, bv), 0)
         thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                                   cv2.THRESH_BINARY_INV, 19, 3)
+                                   cv2.THRESH_BINARY_INV, 21, 3)
 
  
         kernel_size = 2
         kernel = np.ones((kernel_size, kernel_size), np.uint8)
+
+        thresh = cv2.erode(thresh, kernel, iterations=1)
         thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
         # cv2.imshow("ji", thresh)
@@ -369,7 +371,7 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
                 else:
                     if detected[0] in actual:
                         # Correct -> Tick
-                        cv2.putText(final_visual, "1", (x_box, y_box), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 200, 0), 3)
+                        cv2.putText(final_visual, "1", (x_box, y_box), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (20, 255, 20), 3)
                     else:
                         # Wrong -> Cross
                         cv2.putText(final_visual, "0", (x_box, y_box), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 3)
