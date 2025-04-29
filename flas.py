@@ -5,7 +5,7 @@ import subprocess
 import signal
 import sys
 import threading
-from flask import Flask, send_from_directory, render_template_string
+from flask import Flask, send_from_directory, render_template_string, jsonify
 
 # Paths
 download_folder = "/sdcard/Download"
@@ -73,32 +73,48 @@ def watch_folder():
 
 @app.route('/')
 def index():
-    global processing, current_filename, latest_output_filename
-    html = '''
+    return render_template_string('''
     <!DOCTYPE html>
     <html>
     <head>
         <title>OMR Result Viewer</title>
-        <meta http-equiv="refresh" content="2">
+        <script>
+            function checkProcessingStatus() {
+                fetch("/status")
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.processing) {
+                            document.getElementById('status').innerText = "Processing " + data.filename + "...";
+                            document.getElementById('result').style.display = "none";
+                        } else if (data.filename) {
+                            document.getElementById('status').innerText = "";
+                            document.getElementById('result').style.display = "block";
+                            document.getElementById('result').src = "/temp_output/" + data.filename + "?t=" + new Date().getTime();
+                        } else {
+                            document.getElementById('status').innerText = "No OMR sheet processed yet.";
+                            document.getElementById('result').style.display = "none";
+                        }
+                    });
+            }
+
+            setInterval(checkProcessingStatus, 2000);  // Poll every 2 seconds
+        </script>
     </head>
     <body style="text-align: center;">
         <h1>OMR Result Viewer</h1>
-        {% if processing %}
-            <h2 style="color: red;">Processing {{ current_filename }}...</h2>
-        {% elif latest_output_filename %}
-            <img src="/temp_output/{{ latest_output_filename }}?t={{ timestamp }}" alt="OMR Result" style="max-width:100%;">
-        {% else %}
-            <h2>No OMR processed yet.</h2>
-        {% endif %}
+        <h2 id="status">Waiting for OMR sheet...</h2>
+        <img id="result" style="max-width:100%; display:none;">
     </body>
     </html>
-    '''
-    return render_template_string(html,
-        processing=processing,
-        current_filename=current_filename,
-        latest_output_filename=latest_output_filename,
-        timestamp=int(time.time())
-    )
+    ''')
+
+@app.route('/status')
+def status():
+    global processing, current_filename, latest_output_filename
+    return jsonify({
+        "processing": processing,
+        "filename": current_filename if processing else latest_output_filename
+    })
 
 @app.route('/temp_output/<path:filename>')
 def serve_output_file(filename):
