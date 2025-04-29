@@ -131,7 +131,7 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
         print(f"Saved {error_filename} due to column detection failure.")
 
         # Skip further processing for this image
-        return 0, 0, 0, 0, "00", "Column Detection Failed"
+        return 0, 0, 0, 0, "ERROR: Column Detection Failed", "00"
 
     # === Step 3: Draw rectangles for visualization ===
 
@@ -402,7 +402,8 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
 
     # Save final image
     cv2.imwrite(f"{output}/{photo_name}_final_result_with_summary.jpg", new_image)
+    cv2.imwrite(f"output/{photo_name}_final_result_with_summary.jpg", new_image)
     print(f"Saved {output}{photo_name}_final_result_with_summary.jpg",)
   
     # return f"{output}/final_result_with_summary.jpg"
-    return correct + incorrect + unattempted, correct, unattempted, incorrect, "00", "None"
+    return correct + incorrect + unattempted, correct, unattempted, incorrect, f"{output}{photo_name}_final_result_with_summary.jpg", "None"

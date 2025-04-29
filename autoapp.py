@@ -25,6 +25,7 @@ ppath = "temp_input/"
 photos = os.listdir(ppath)
 rolls = []
 dup_rolls = []
+ret = None
 for photo in photos:
     if photo.endswith(".jpg") or photo.endswith(".jpeg"):
         cap = None
@@ -35,15 +36,15 @@ for photo in photos:
             cap = None
         print()
         print("-----------------------------------")
+        os.system(f"cp -f {ppath}/{photo} input/")
         eval_data = evaluate(f"{ppath}/{photo}", photo, "temp_output/", "answer_key.txt", cap, None, None)
+        print(eval_data)
         try:
-         if eval_data[4] in rolls:
-            dup_rolls.append(photo)
-            os.system(f"cp {ppath}/{photo} duplicates/")
-         else:
-            rolls.append(eval_data[4])
-        except Exception as e:
-            print(e)
+         if eval_data[4]:
+             print(eval_data[4])
+             ret = eval_data[4]
+        except:
+            pass
            
     
 end_time = time.time()
