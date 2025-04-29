@@ -64,7 +64,7 @@ def process_image(image_path, photo_name, output, answer_key_given, *args):
                                    cv2.THRESH_BINARY_INV, 21, 3)
 
  
-        kernel_size = 2
+        kernel_size = 1 #2
         kernel = np.ones((kernel_size, kernel_size), np.uint8)
 
         thresh = cv2.erode(thresh, kernel, iterations=1)
