@@ -5,22 +5,23 @@ import subprocess
 import signal
 import sys
 import threading
+import glob
 from flask import Flask, send_from_directory, render_template_string, jsonify
-
 import logging
 
 class FilterRequests(logging.Filter):
     def filter(self, record):
         return "GET /" not in record.getMessage() and "POST /" not in record.getMessage()
+
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.INFO)
 log.addFilter(FilterRequests())
 
 # Paths
-# download_folder = "error"
 download_folder = "/sdcard/Download"
 input_folder = "temp_input"
 output_folder = "temp_output"
+error_folder = "error"
 
 # Extensions to look for
 extensions = ('.jpg', '.jpeg', '.png')
@@ -29,6 +30,7 @@ extensions = ('.jpg', '.jpeg', '.png')
 processing = False
 current_filename = ""
 latest_output_filename = ""
+error_occurred = False
 
 app = Flask(__name__)
 
@@ -39,48 +41,70 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
+def get_latest_error_image():
+    error_files = glob.glob(os.path.join(error_folder, "*"))
+    error_files = [f for f in error_files if f.lower().endswith(extensions)]
+    if not error_files:
+        return None
+    return max(error_files, key=os.path.getmtime)
+
 def move_and_process(file_path):
-    global processing, current_filename, latest_output_filename
+    global processing, current_filename, latest_output_filename, error_occurred
     filename = os.path.basename(file_path)
     current_filename = filename
     processing = True
+    error_occurred = False
 
     os.system("rm -rf temp_input/*")
     os.system("rm -rf temp_output/*")
     shutil.move(file_path, os.path.join(input_folder, filename))
     print(f"Moved {filename} to input folder.")
 
-    # Run your processing app
+    try:
+        process = subprocess.Popen(
+            ["python", "autoapp.py"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
 
-    process = subprocess.Popen(
-        ["python", "autoapp.py"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
+        stdout, stderr = process.communicate()
 
-    stdout, stderr = process.communicate()
+        if stdout:
+            print("Output from autoapp.py:")
+            print(stdout)
 
-    if stdout:
-        print("Output from autoapp.py:")
-        print(stdout)
+        if stderr:
+            print("Error from autoapp.py:", file=sys.stderr)
+            print(stderr, file=sys.stderr)
+            error_occurred = True
 
- #   if stderr:
-   #     print("Errors from autoapp.py:", file=sys.stderr)
-   #     print(stderr, file=sys.stderr)
-    # res = subprocess.run(["python3", "autoapp.py"], capture_output=True, text=True)
-    # print(res.stdout)
-    # print(res.stderr)
+        output_files = os.listdir(output_folder)
+        output_files = [f for f in output_files if f.lower().endswith(extensions)]
 
-    # Assume autoapp.py outputs a file in temp_output
-    output_files = os.listdir(output_folder)
-    output_files = [f for f in output_files if f.lower().endswith(extensions)]
+        if output_files:
+            latest_output_filename = output_files[-1]
+            print(f"Processed output: {latest_output_filename}")
+        else:
+            error_file = get_latest_error_image()
+            if error_occurred and error_file:
+                dest = os.path.join(output_folder, os.path.basename(error_file))
+                shutil.copy(error_file, dest)
+                latest_output_filename = os.path.basename(error_file)
+                print(f"Displayed error image: {latest_output_filename}")
+            else:
+                latest_output_filename = ""
 
-    if output_files:
-        latest_output_filename = output_files[-1]  # pick last generated file
-        print(f"Processed output: {latest_output_filename}")
-    else:
-        latest_output_filename = ""
+    except Exception as e:
+        print(f"Processing exception: {e}")
+        error_file = get_latest_error_image()
+        if error_file:
+            dest = os.path.join(output_folder, os.path.basename(error_file))
+            shutil.copy(error_file, dest)
+            latest_output_filename = os.path.basename(error_file)
+            print(f"Displayed error image: {latest_output_filename}")
+        else:
+            latest_output_filename = ""
 
     processing = False
 
@@ -96,11 +120,10 @@ def watch_folder():
                 if full_path not in already_seen:
                     move_and_process(full_path)
                     already_seen.add(full_path)
-            time.sleep(1)  # Check every 1 second
+            time.sleep(1)
         except Exception as e:
             print(f"Error: {e}")
             time.sleep(1)
-
 
 @app.route('/')
 def index():
@@ -133,6 +156,11 @@ def index():
             body {
                 text-align: center;
                 font-family: Arial, sans-serif;
+            }
+
+            img {
+                max-width: 95%;
+                margin-top: 20px;
             }
         </style>
 
@@ -170,12 +198,10 @@ def index():
             <p>Processing... Please wait</p>
         </div>
 
-        <img id="result" style="max-width:100%; display:none;">
+        <img id="result" style="display:none;">
     </body>
     </html>
     ''')
-
-    
 
 @app.route('/status')
 def status():
@@ -191,4 +217,4 @@ def serve_output_file(filename):
 
 if __name__ == "__main__":
     threading.Thread(target=watch_folder, daemon=True).start()
-    app.run(host="0.0.0.0", port=5000,debug = False, use_reloader=False)
+    app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
