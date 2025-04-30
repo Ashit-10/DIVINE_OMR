@@ -101,6 +101,7 @@ def watch_folder():
             print(f"Error: {e}")
             time.sleep(1)
 
+
 @app.route('/')
 def index():
     return render_template_string('''
@@ -108,6 +109,33 @@ def index():
     <html>
     <head>
         <title>OMR Result Viewer</title>
+        <style>
+            .spinner {
+                margin: 40px auto;
+                width: 80px;
+                height: 80px;
+                border: 10px solid #f3f3f3;
+                border-top: 10px solid #3498db;
+                border-radius: 50%;
+                animation: spin 1.2s linear infinite;
+            }
+
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+
+            #loading {
+                display: none;
+                text-align: center;
+            }
+
+            body {
+                text-align: center;
+                font-family: Arial, sans-serif;
+            }
+        </style>
+
         <script>
             function checkProcessingStatus() {
                 fetch("/status")
@@ -115,28 +143,39 @@ def index():
                     .then(data => {
                         if (data.processing) {
                             document.getElementById('status').innerText = "Processing " + data.filename + "...";
+                            document.getElementById('loading').style.display = "block";
                             document.getElementById('result').style.display = "none";
                         } else if (data.filename) {
                             document.getElementById('status').innerText = "";
+                            document.getElementById('loading').style.display = "none";
                             document.getElementById('result').style.display = "block";
                             document.getElementById('result').src = "/temp_output/" + data.filename + "?t=" + new Date().getTime();
                         } else {
                             document.getElementById('status').innerText = "No OMR sheet processed yet.";
+                            document.getElementById('loading').style.display = "none";
                             document.getElementById('result').style.display = "none";
                         }
                     });
             }
 
-            setInterval(checkProcessingStatus, 2000);  // Poll every 2 seconds
+            setInterval(checkProcessingStatus, 2000);
         </script>
     </head>
-    <body style="text-align: center;">
+    <body>
         <h1>OMR Result Viewer</h1>
         <h2 id="status">Waiting for OMR sheet...</h2>
+
+        <div id="loading">
+            <div class="spinner"></div>
+            <p>Processing... Please wait</p>
+        </div>
+
         <img id="result" style="max-width:100%; display:none;">
     </body>
     </html>
     ''')
+
+    
 
 @app.route('/status')
 def status():
